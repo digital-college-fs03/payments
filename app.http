@@ -1,0 +1,8 @@
+POST http://localhost:3000/transaction
+Content-Type: application/json
+
+{
+    "value": 100.0,
+    "payer": 4,
+    "payee": 4
+}
