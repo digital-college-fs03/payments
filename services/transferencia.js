@@ -1,6 +1,7 @@
 import { criarTransferencia } from '../repositories/transferencia.js'
 import { atualizarSaldo, recuperarSaldo } from '../repositories/carteira.js'
 import { recuperarUsuario } from '../repositories/usuario.js'
+import database from '../database.js'
 
 export default async function (pagador, recebedor, valor) {
     // recuperar, buscar, selecionar o saldo do pagador
@@ -16,23 +17,32 @@ export default async function (pagador, recebedor, valor) {
             error: 'Lojistas só recebem transferências'
         }
     }
-    // TODO: START TRANSACTION
 
-    // criar a transferencia
-    const data = await criarTransferencia(pagador, recebedor, valor)
     // recuperar o saldo do recebedor
     const carteiraRecebedor = await recuperarSaldo(recebedor)
-    // atualiza saldo do pagador
-    const saldoPagador = Number(carteiraPagador.saldo) - valor
-    await atualizarSaldo(carteiraPagador.id, saldoPagador)
-    // atualiza saldo do recebedor
-    const saldoRecebedor = Number(carteiraRecebedor.saldo) + valor
-    await atualizarSaldo(carteiraRecebedor.id, saldoRecebedor)
 
-    // TODO: consultar um serviço autorizador externo
+    let data = []
+    const saldoPagador = Number(carteiraPagador.saldo) - valor
+    const saldoRecebedor = Number(carteiraRecebedor.saldo) + valor
+    await database.transaction(async function (transaction) {
+        // criar a transferencia
+        data = await criarTransferencia(transaction)(pagador, recebedor, valor)
+    
+        const atualizar = atualizarSaldo(transaction)
+        // atualiza saldo do pagador
+        await atualizar(carteiraPagador.id, saldoPagador)
+        // atualiza saldo do recebedor
+        await atualizar(carteiraRecebedor.id, saldoRecebedor)
+
+        const URL = 'https://webhook.site/fa067203-1bed-4b56-9284-c34c3182e4db'
+        // TODO: consultar um serviço autorizador externo
+        const response = await fetch(URL)
+        if (!response.ok) {
+            throw new Error('xxxx')
+        }
+    })
     // TODO: enviar notificação
 
-    // TODO: COMMIT / ROLLBACK
     return {
         transferencia: data.pop(),
         pagador: saldoPagador,

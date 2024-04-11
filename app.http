@@ -3,6 +3,6 @@ Content-Type: application/json
 
 {
     "value": 10,
-    "payer": 15,
-    "payee": 4
+    "payer": 4,
+    "payee": 15
 }
