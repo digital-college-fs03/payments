@@ -2,50 +2,47 @@ import { criarTransferencia } from '../repositories/transferencia.js'
 import { atualizarSaldo, recuperarSaldo } from '../repositories/carteira.js'
 import { recuperarUsuario } from '../repositories/usuario.js'
 import database from '../database.js'
+import { autorizarExterno } from '../repositories/autorizador.js'
+import { enviarNotificao } from '../repositories/notificador.js'
 
 export default async function (pagador, recebedor, valor) {
     // recuperar, buscar, selecionar o saldo do pagador
     const carteiraPagador = await recuperarSaldo(pagador)
     if (carteiraPagador.saldo < valor) {
-        return {
-            error: 'Saldo insuficente'
-        }
+        throw new Error('Saldo insuficente')
     }
     const usuario = await recuperarUsuario(pagador)
     if (usuario.tipo === 'lojista') {
-        return {
-            error: 'Lojistas só recebem transferências'
-        }
+        throw new Error('Lojistas só recebem transferências')
     }
 
     // recuperar o saldo do recebedor
     const carteiraRecebedor = await recuperarSaldo(recebedor)
 
-    let data = []
+    let transactionId
     const saldoPagador = Number(carteiraPagador.saldo) - valor
     const saldoRecebedor = Number(carteiraRecebedor.saldo) + valor
     await database.transaction(async function (transaction) {
         // criar a transferencia
-        data = await criarTransferencia(transaction)(pagador, recebedor, valor)
-    
+        const data = await criarTransferencia(transaction)(pagador, recebedor, valor)
+        transactionId = data.pop()
         const atualizar = atualizarSaldo(transaction)
         // atualiza saldo do pagador
         await atualizar(carteiraPagador.id, saldoPagador)
         // atualiza saldo do recebedor
         await atualizar(carteiraRecebedor.id, saldoRecebedor)
-
-        const URL = 'https://webhook.site/fa067203-1bed-4b56-9284-c34c3182e4db'
-        // TODO: consultar um serviço autorizador externo
-        const response = await fetch(URL)
-        if (!response.ok) {
-            throw new Error('xxxx')
+        // chama o autorizador externo para validar a transação
+        if (await autorizarExterno(transactionId)) {
+            return
         }
+        throw new Error("Não foi possível autorizar a transação '" + transactionId + "'")
     })
-    // TODO: enviar notificação
-
-    return {
-        transferencia: data.pop(),
+    const payload = {
+        transferencia: transactionId,
         pagador: saldoPagador,
         recebedor: saldoRecebedor
     }
+    await enviarNotificao(payload)
+
+    return payload
 }

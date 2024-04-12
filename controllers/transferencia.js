@@ -5,6 +5,10 @@ export default async function (request, response) {
     const recebedor = request.body.payee
     const valor = Number(request.body.value)
 
-    const resultado = await transferencia(pagador, recebedor, valor)
-    response.send(resultado)
+    try {
+        const resultado = await transferencia(pagador, recebedor, valor)
+        response.send(resultado)
+    } catch(error) {
+        response.status(422).send({ error: error.message })
+    }
 }
