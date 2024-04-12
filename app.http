@@ -1,4 +1,4 @@
-POST http://localhost:3000/transaction
+POST http://ec2-44-204-168-122.compute-1.amazonaws.com/transaction
 Content-Type: application/json
 
 {

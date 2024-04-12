@@ -4,7 +4,7 @@ export async function enviarNotificao (payload) {
     const response = await fetch(URL)
     try {
         if (!response.ok) {
-            throw new Error("Não foi possível enviar a notificação da transação '" + transactionId + "'")
+            throw new Error("Não foi possível enviar a notificação da transação")
         }
     } catch(e) {
         console.error(e)
