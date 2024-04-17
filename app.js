@@ -8,6 +8,8 @@ app.use(express.json())
 // for parsing application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }))
 
+app.get('/', (_, res) => res.send('Hello World!'))
+
 // clean code
 app.post('/transaction', transferencia)
 
