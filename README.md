@@ -3,7 +3,7 @@
 
 Desenvolvemos um sistema intuitivo e seguro para transferências entre usuários. Com uma interface amigável, os usuários podem facilmente enviar e receber dinheiro, garantindo transações rápidas e confiáveis. Nosso foco é proporcionar uma experiência transparente, minimizando riscos e otimizando a conveniência para todos os envolvidos.
 
-## Rodar localmente
+## 🚀 Rodar localmente
 
 Clonar o projeto
 
